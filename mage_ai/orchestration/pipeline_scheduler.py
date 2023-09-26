@@ -47,6 +47,7 @@ from mage_ai.orchestration.notification.sender import NotificationSender
 from mage_ai.orchestration.utils.distributed_lock import DistributedLock
 from mage_ai.orchestration.utils.git import log_git_sync, run_git_sync
 from mage_ai.orchestration.utils.resources import get_compute, get_memory
+from mage_ai.server import scheduler_manager
 from mage_ai.server.logger import Logger
 from mage_ai.settings import HOSTNAME
 from mage_ai.settings.repo import get_repo_path
@@ -282,7 +283,7 @@ class PipelineScheduler:
         if self.pipeline_run.status != PipelineRun.PipelineRunStatus.RUNNING:
             return
         else:
-            self.schedule()
+            scheduler_manager.wake_scheduler()
 
     @safe_db_query
     def on_block_complete_without_schedule(self, block_uuid: str) -> None:
@@ -1024,7 +1025,7 @@ def run_block(
     verify_output: bool = True,
     retry_config: Dict = None,
     runtime_arguments: Dict = None,
-    schedule_after_complete: bool = False,
+    schedule_after_complete: bool = True,
     template_runtime_configuration: Dict = None,
     block_run_dicts: List[Dict] = None,
 ) -> Any:

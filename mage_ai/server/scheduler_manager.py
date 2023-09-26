@@ -18,7 +18,7 @@ SCHEDULER_AUTO_RESTART_INTERVAL = 20_000    # in milliseconds
 logger = Logger().new_server_logger(__name__)
 
 
-def run_scheduler():
+def run_scheduler(wake_event):
     from mage_ai.orchestration.triggers.loop_time_trigger import LoopTimeTrigger
 
     sentry_dsn = SENTRY_DSN
@@ -35,7 +35,7 @@ def run_scheduler():
     except Exception:
         traceback.print_exc()
     try:
-        LoopTimeTrigger().start()
+        LoopTimeTrigger(wake_event).start()
     except Exception as e:
         traceback.print_exc()
         raise e
@@ -70,8 +70,9 @@ class SchedulerManager:
         logger.info('Start scheduler.')
         if self.is_alive:
             return
-
-        proc = create_process(target=run_scheduler)
+        wake_event = multiprocessing.Event()
+        self.wake = wake_event
+        proc = create_process(target=run_scheduler, args=(wake_event,))
         proc.start()
         self.scheduler_process = proc
         self.status = self.SchedulerStatus.RUNNING
@@ -79,6 +80,14 @@ class SchedulerManager:
             while True:
                 check_scheduler_status()
                 time.sleep(SCHEDULER_AUTO_RESTART_INTERVAL / 1000)
+
+    def wake_scheduler(self):
+        self.wake.set()
+        # Checking the scheduler's status fails because it is always dead ?!??
+        # if self.is_alive:
+        #     print(self.wake)
+        #     self.wake.set()
+
 
     def stop_scheduler(self):
         logger.info('Stop scheduler.')
