@@ -1471,6 +1471,7 @@ function PipelineListPage() {
   ), [
     clonePipeline,
     deletePipeline,
+    downloadPipeline,
     displayLocalTimezone,
     getUniqueRowIdentifier,
     pipelinesEditing,
