@@ -49,6 +49,10 @@ class File:
         return os.path.isfile(file_path)
 
     @classmethod
+    def folder_exists(self, file_path: str) -> bool:
+        return os.path.isdir(file_path)
+
+    @classmethod
     def create_parent_directories(self, file_path: str) -> bool:
         will_create = not self.file_exists(file_path)
         if will_create:
@@ -254,6 +258,19 @@ class File:
     def exists(self) -> bool:
         return self.file_exists(self.file_path)
 
+    def is_folder(self) -> bool:
+        return self.folder_exists(self.file_path)
+    
+    def folder_content(self) -> bool:
+        paths = []
+        for root, _, files in os.walk(self.file_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, self.file_path)
+                paths.append([file_path, rel_path])
+        print('PATHS:', paths)
+        return paths
+
     def content(self):
         try:
             with open(self.file_path, encoding='utf-8') as fp:
@@ -363,7 +380,7 @@ def ensure_file_is_in_project(file_path: str) -> None:
             f'File at path: {file_path} is not in the project directory.')
 
 
-def traverse(name: str, is_dir: str, path: str, disabled=False, depth=1) -> Dict:
+def traverse(name: str, is_dir: bool, path: str, disabled=False, depth=1) -> Dict:
     tree_entry = dict(name=name)
     if not is_dir:
         tree_entry['disabled'] = disabled

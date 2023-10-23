@@ -7,7 +7,7 @@ import jwt
 from mage_ai.api.constants import DOWNLOAD_TOKEN_LIFESPAN, TEMPORARY_DOWNLOAD_LOCATION
 from mage_ai.api.resources.GenericResource import GenericResource
 from mage_ai.data_preparation.models.download import Download
-from mage_ai.data_preparation.models.file import File
+from mage_ai.data_preparation.models.file import File, ensure_file_is_in_project
 from mage_ai.data_preparation.models.pipeline import Pipeline
 from mage_ai.orchestration.db import safe_db_query
 from mage_ai.settings import JWT_SECRET
@@ -26,9 +26,12 @@ class DownloadResource(GenericResource):
         if isinstance(parent_model, Pipeline):
             file_path = self.zip_pipeline(parent_model, ignore_folder_structure)
         elif isinstance(parent_model, File):
-            if not parent_model.exists():
-                raise Exception(f'File {parent_model.filename} does not exist.')
-            file_path = parent_model.file_path
+            if parent_model.is_folder():
+                file_path = self.zip_directory(parent_model)
+            else:
+                if not parent_model.exists():
+                    raise Exception(f'File {parent_model.filename} does not exist.')
+                file_path = parent_model.file_path
 
         token = self.generate_download_token(file_path)
         download = Download(token, host)
@@ -49,6 +52,15 @@ class DownloadResource(GenericResource):
                 rel_path = block.file_path.replace(repo_path, '')
                 arcname = block.file_path.split('/')[-1] if ignore_folder_structure else rel_path
                 pipeline_zip.write(block.file_path, arcname)  # write individual blocks to pipeline
+        return zip_name
+    
+    def zip_directory(folder: File):
+        print('FOLDER:', folder)
+        zip_name = f'/{TEMPORARY_DOWNLOAD_LOCATION}/{folder.filename}.zip'
+        with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as dir_zip:
+            file_paths = folder.folder_content()
+            for file_path, rel_path in file_paths:
+                dir_zip.write(file_path, rel_path)
         return zip_name
 
     def generate_download_token(file_path):

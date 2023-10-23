@@ -28,7 +28,7 @@ import {
 import { HEADER_Z_INDEX } from '@components/constants';
 import { UNIT } from '@oracle/styles/units/spacing';
 import { buildAddBlockRequestPayload } from '../FileEditor/utils';
-import { getBlockFromFile, getFullPathWithoutRootFolder } from './utils';
+import { getBlockFromFile, getFullPath, getFullPathWithoutRootFolder } from './utils';
 import { find } from '@utils/array';
 import { onSuccess } from '@api/utils/response';
 import { useModal } from '@context/Modal';
@@ -96,7 +96,34 @@ function FileBrowser({
       onSuccess: (response: any) => onSuccess(
         response, {
           callback: () => {
-            const url = response.data.download.uri
+            const url = response.data.download.uri;
+            const a = document.createElement('a');
+            a.href = url;
+            document.body.appendChild(a); 
+
+            // Trigger the download
+            a.click();
+
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          },
+          onErrorCallback: (response, errors) => setErrors({
+            errors,
+            response,
+          }),
+        }
+      )
+    }
+  );
+
+  const [downloadFolder] = useMutation(
+    (fullPath: string) => api.downloads.folders.useCreate(fullPath)(),
+    {
+      onSuccess: (response: any) => onSuccess(
+        response, {
+          callback: () => {
+            const url = response.data.download.uri;
             const a = document.createElement('a');
             a.href = url;
             document.body.appendChild(a); 
@@ -458,6 +485,16 @@ function FileBrowser({
           uuid: 'Move_folder',
         },
         {
+          label: () => 'Download folder',
+          onClick: () => {
+            const fp = getFullPathWithoutRootFolder(selectedFolder);
+            // const fp = getFullPath(selectedFolder);
+            console.log('FOLDER IS: ', selectedFolder, fp);
+            downloadFolder(encodeURIComponent(fp));
+          },
+          uuid: 'download_folder',
+        },
+        {
           label: () => 'Delete folder',
           onClick: () => {
             const fp = getFullPathWithoutRootFolder(selectedFolder);
@@ -571,6 +608,7 @@ function FileBrowser({
     deleteFile,
     deleteFolder,
     deleteWidget,
+    downloadFile,
     ref,
     showModal,
     showModalNewFile,

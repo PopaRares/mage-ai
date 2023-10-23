@@ -6,7 +6,7 @@ from typing import Dict
 from mage_ai.api.errors import ApiError
 from mage_ai.api.resources.GenericResource import GenericResource
 from mage_ai.data_preparation.models.errors import FileNotInProjectError
-from mage_ai.data_preparation.models.file import ensure_file_is_in_project
+from mage_ai.data_preparation.models.file import File, ensure_file_is_in_project
 from mage_ai.orchestration.db import safe_db_query
 from mage_ai.settings.repo import get_repo_path
 
@@ -28,6 +28,12 @@ class FolderResource(GenericResource):
     def member(cls, pk, user, **kwargs):
         path = full_path(urllib.parse.unquote(pk))
         return cls(dict(path=path), user, **kwargs)
+
+    @classmethod
+    @safe_db_query
+    def get_model(self, pk):
+        file_path = urllib.parse.unquote(pk)
+        return File.from_path(file_path, get_repo_path())
 
     def delete(self, **kwargs):
         self.check_folder_is_in_project(self.path)
