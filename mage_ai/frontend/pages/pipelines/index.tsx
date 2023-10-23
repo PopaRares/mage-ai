@@ -98,6 +98,7 @@ import { pauseEvent } from '@utils/events';
 import { storeLocalTimezoneSetting } from '@components/settings/workspace/utils';
 import { useError } from '@context/Error';
 import { useModal } from '@context/Modal';
+import { commenceDownload } from '@utils/download';
 
 const TAB_RECENT = {
   Icon: Schedule,
@@ -297,22 +298,13 @@ function PipelineListPage() {
       pipelineUUID: string;
       filesOnly?: boolean;
     }) => 
-      api.downloads.pipelines.useCreate(pipelineUUID)({'download': {'ignore_folder_structure': filesOnly}}),
+      api.downloads.pipelines.useCreate(pipelineUUID)({ 'download': { 'ignore_folder_structure': filesOnly } }),
     {
       onSuccess: (response: any) => onSuccess(
         response, {
           callback: () => {
-            const url = response.data.download.uri
-            const a = document.createElement('a');
-            a.href = url;
-            document.body.appendChild(a);
-
-            // Trigger the download
-            a.click();
-
-            // Clean up
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            const url = response.data.download.uri;
+            commenceDownload(document, url);
           },
           onErrorCallback: (response, errors) => setErrors({
             errors,

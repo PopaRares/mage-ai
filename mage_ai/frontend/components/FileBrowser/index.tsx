@@ -32,6 +32,7 @@ import { getBlockFromFile, getFullPath, getFullPathWithoutRootFolder } from './u
 import { find } from '@utils/array';
 import { onSuccess } from '@api/utils/response';
 import { useModal } from '@context/Modal';
+import { commenceDownload } from '@utils/download';
 
 const MENU_WIDTH: number = UNIT * 20;
 
@@ -97,16 +98,7 @@ function FileBrowser({
         response, {
           callback: () => {
             const url = response.data.download.uri;
-            const a = document.createElement('a');
-            a.href = url;
-            document.body.appendChild(a); 
-
-            // Trigger the download
-            a.click();
-
-            // Clean up
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            commenceDownload(document, url);
           },
           onErrorCallback: (response, errors) => setErrors({
             errors,
@@ -124,16 +116,7 @@ function FileBrowser({
         response, {
           callback: () => {
             const url = response.data.download.uri;
-            const a = document.createElement('a');
-            a.href = url;
-            document.body.appendChild(a); 
-
-            // Trigger the download
-            a.click();
-
-            // Clean up
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            commenceDownload(document, url);
           },
           onErrorCallback: (response, errors) => setErrors({
             errors,
@@ -609,6 +592,7 @@ function FileBrowser({
     deleteFolder,
     deleteWidget,
     downloadFile,
+    downloadFolder,
     ref,
     showModal,
     showModalNewFile,
